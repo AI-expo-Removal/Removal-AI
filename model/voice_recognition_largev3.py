@@ -34,7 +34,7 @@ pipe = pipeline(
 # file_lo = 'content/test.wav'
 # dat = wavfile.read(file_lo)
 # print(dat)
-audio_file_path = '/Volumes/KDW_X31/Projects/Removal/Datasets/test.wav'  # 수정 필요한 오디오 파일 경로
+audio_file_path = 'YOUR_DIR/test.wav'  # 수정 필요한 오디오 파일 경로
 
 # 오디오 파일을 직접 로드하여 파이프라인에 전달하여 텍스트로 변환
 audio, sr = librosa.load(audio_file_path, sr=None)

@@ -31,7 +31,7 @@ print(transcription)
 
 
 
-dat_location = open(os.path.join("/Volumes/KDW_X31/Projects/Removal/Datasets", "test.wav"), "rb")
+dat_location = open(os.path.join("YOUR_DIR", "test.wav"), "rb")
 vd = dat_location.read()
 print(vd)
 sam = vd

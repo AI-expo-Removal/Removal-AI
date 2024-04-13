@@ -1,4 +1,4 @@
-f = open('/Volumes/KDW_X31/Projects/Removal/Removal-AI/remove-bad/badlanguage.txt', 'r', encoding='UTF8')
+f = open('YOUR_DIR/badlanguage.txt', 'r', encoding='UTF8')
 bad_list = f.read().split(', ')
 data = input().split()
 
