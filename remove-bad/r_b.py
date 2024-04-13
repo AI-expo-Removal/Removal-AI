@@ -1,13 +1,14 @@
-inp = "아이 씨발 행복하네 존나"
-# => "아이 ** 행복하네 **"
+f = open('/Volumes/KDW_X31/Projects/Removal/Removal-AI/remove-bad/badlanguage.txt', 'r', encoding='UTF8')
+bad_list = f.read().split(', ')
+data = input().split()
 
-lst = ["시발", "씨발", "존나", "개새끼", "병신", "장애", "개씨발", "개병신"]
-
-new_inp = []
-inp = inp.split()
-for i in inp:
-  if i in lst:
-    i = "*" * len(i)
-  new_inp.append(i)
-
-print(' '.join(new_inp))
+new_text = []
+for inp in data:
+    result = [p for p in inp]
+    for bad in bad_list:
+        if bad in inp:
+            idx = inp.find(bad)
+            for i in range(idx, len(bad)+idx):
+                result[i] = '*'
+    new_text.append(''.join(result))
+print(' '.join(new_text))
