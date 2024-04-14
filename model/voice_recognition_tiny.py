@@ -27,10 +27,6 @@ print(transcription)
 transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 print(transcription)
 
-
-
-
-
 dat_location = open(os.path.join("YOUR_DIR", "test.wav"), "rb")
 vd = dat_location.read()
 print(vd)
