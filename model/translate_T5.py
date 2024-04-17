@@ -26,15 +26,12 @@ num_train = 1210000
 num_valid = 80000
 num_test = 10000
 
-en_ko_df_train = en_ko_df.iloc[:num_train]
-en_ko_df_valid = en_ko_df.iloc[num_train:num_train + num_valid]
-en_ko_df_test = en_ko_df.iloc[-num_test:]
-
 if os.path.exists("train.tsv"):
   print("------------------------------")
   print("train.tsv 존재")
   print("------------------------------")
 else:
+  en_ko_df_train = en_ko_df.iloc[:num_train]
   en_ko_df_train.to_csv("train.tsv", sep='\t', index=False)
 
 if os.path.exist("valid.tsv"):
@@ -42,6 +39,7 @@ if os.path.exist("valid.tsv"):
   print("valid.tsv 존재")
   print("------------------------------")
 else:
+  en_ko_df_valid = en_ko_df.iloc[num_train:num_train + num_valid]
   en_ko_df_valid.to_csv("valid.tsv", sep='\t', index=False)
 
 if os.path.exist("test.tsv"):
@@ -49,6 +47,7 @@ if os.path.exist("test.tsv"):
   print("test.tsv 존재")
   print("------------------------------")
 else:
+  en_ko_df_test = en_ko_df.iloc[-num_test:]
   en_ko_df_test.to_csv("test.tsv", sep='\t', index=False)
 
 datafiles = {"train": "train.tsv", "valid": "valid.tsv", "test": "test.tsv"}
