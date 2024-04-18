@@ -1,38 +1,39 @@
-import os
-
-# tiny
-from transformers import WhisperProcessor, WhisperForConditionalGeneration
+import torch
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from datasets import load_dataset
 
-# load model and processor
-processor = WhisperProcessor.from_pretrained("openai/whisper-tiny")
-model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny")
-model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(language="ko", task="transcribe")
 
-# load dummy dataset and read audio files
-ds = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation")
-sample = ds[0]["audio"]
-input_features = processor(sample["array"], sampling_rate=sample["sampling_rate"], return_tensors="pt").input_features 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(device)
+torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
-#dsa = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean")
-#print(dsa)
+model_id = "openai/whisper-large-v3" # 사용할 whisper 사이즈
 
-# generate token ids
-predicted_ids = model.generate(input_features)
-# decode token ids to text
-transcription = processor.batch_decode(predicted_ids, skip_special_tokens=False)
+model = AutoModelForSpeechSeq2Seq.from_pretrained(
+    model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+)
+model.to(device)
 
-print(transcription)
+processor = AutoProcessor.from_pretrained(model_id)
 
-transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
-print(transcription)
+tiny = pipeline(
+    "automatic-speech-recognition",
+    model=model,
+    tokenizer=processor.tokenizer,
+    feature_extractor=processor.feature_extractor,
+    max_new_tokens=128,
+    chunk_length_s=30,
+    batch_size=16,
+    return_timestamps=True,
+    torch_dtype=torch_dtype,
+    device=device,
+)
 
-dat_location = open(os.path.join("YOUR_DIR", "test.wav"), "rb")
-vd = dat_location.read()
-print(vd)
-sam = vd
-i_f = processor(sam["array"], sampling_rate = sample["sampling_rate"], return_tensors = "pt").input_features
+# dataset = load_dataset("distil-whisper/librispeech_long", "clean", split="validation")
+# sample = dataset[0]["audio"]
 
-pre_ids = model.generate(i_f)
-transc = processor.batch_decode(pre_ids, skip_special_tokens=False)
-print(transc)
+# result = pipe(sample)
+# print(result["text"])
+
+result = tiny("YOUR_DIR/testnew.mp3", generate_kwargs={"language": "korean"})
+print(result)
