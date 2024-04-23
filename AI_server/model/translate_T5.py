@@ -34,7 +34,7 @@ else:
   en_ko_df_train = en_ko_df.iloc[:num_train]
   en_ko_df_train.to_csv("train.tsv", sep='\t', index=False)
 
-if os.path.exist("valid.tsv"):
+if os.path.exists("valid.tsv"):
   print("------------------------------")
   print("valid.tsv 존재")
   print("------------------------------")
@@ -42,7 +42,7 @@ else:
   en_ko_df_valid = en_ko_df.iloc[num_train:num_train + num_valid]
   en_ko_df_valid.to_csv("valid.tsv", sep='\t', index=False)
 
-if os.path.exist("test.tsv"):
+if os.path.exists("test.tsv"):
   print("------------------------------")
   print("test.tsv 존재")
   print("------------------------------")
@@ -53,7 +53,8 @@ else:
 datafiles = {"train": "train.tsv", "valid": "valid.tsv", "test": "test.tsv"}
 dataset = load_dataset("csv", data_files=datafiles, delimiter="\t")
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu") # in mac silicon chip gpu
 print("------------------------------")
 print(device)
 print("------------------------------")

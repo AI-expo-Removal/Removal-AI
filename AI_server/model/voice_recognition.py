@@ -1,10 +1,15 @@
 import torch
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from datasets import load_dataset
+import os
 
 def recognition():
-  # device = "mps" if torch.device("mps") else "cpu" # in mac silicon chip gpu
+  current_directory = os.path.dirname(os.path.realpath(__file__))
+  audiourl = os.path.join(current_directory, "../video/output/sund.mp3")
+
+  # device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu") # in mac silicon chip gpu
   device = "cuda" if torch.cuda.is_available() else "cpu" # in nvidia gpu
+  # print(device)
   torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
   model_id = "openai/whisper-base" # 사용할 whisper 사이즈
@@ -28,5 +33,6 @@ def recognition():
     device=device,
   )
 
-  result = pipe("YOUR_FILE_LOCATION")
-  return result
+  result = pipe(audiourl)
+  print(result)
+  return result["text"], result["chunks"]

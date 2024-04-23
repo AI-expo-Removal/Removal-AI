@@ -3,7 +3,9 @@ import subprocess
 import os
 
 def video_to_audio(url):
-  if os.path.exists("YOUR_DIR/sund.mp3"):
-    os.remove("YOUR_DIR/sund.mp3")
-  outp = "YOUR_DIR/sund.mp3"
+  if os.path.exists("../video/output/sund.mp3"):
+    os.remove("../video/output/sund.mp3")
+  outp = "../video/output/sund.mp3"
   subprocess.run(["ffmpeg", "-i", url, outp])
+
+video_to_audio("/Users/kdw/Documents/Projects/AI EXPO/Removal-AI/AI_server/video/Becane.mp4")
