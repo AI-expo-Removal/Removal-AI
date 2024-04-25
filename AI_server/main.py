@@ -1,16 +1,18 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from typing import List
-from video2audio import ffmpeg
-from model import voice_recognition, translator, detect
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from model import voice_recognition, translator, detect, addsubtitle, getaudio
 from remove_bad import r_b
+from models import Video
 import shutil
 import os
 
 app = FastAPI()
 
-async def pro_tetrancess_text(url):
-  ffmpeg.video_to_audio(url)
+async def pro_tetrancess_text(url): # mp4 video url
+  getaudio.getaud(url)
   text, timeline = voice_recognition.recognition()
   lang = detect.detect_language(text)
   return lang, timeline
@@ -21,21 +23,25 @@ async def remo(timeline):
 async def translate(text):
   return translator.translate_to_korean(text)
 
-@app.post("")
+async def addsub(tl, mp4url):
+  return addsubtitle.addsub(tl, mp4url)
 
-@app.get("/video/{video_name}")
-async def get_processed_video(video_name: str):
-  video_path = os.path.join("processed_videos", video_name)
-  if os.path.exists(video_path):
-    return FileResponse(video_path, media_type="video/mp4")
-  else:
-    return {"error": "Video not found"}
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://3.36.127.22:3306/removal"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+@app.get("/videos/{video_id}")
+async def get_video_url(video_id: int):
+    db = SessionLocal()
+    video = db.query(Video).filter(Video.id == video_id).first()
+    if video is None:
+        return {"error": "Video not found"}
+    return {"url": video.url}
 
 if __name__ == "__main__":
   # 서버 실행
   import uvicorn
-  uvicorn.run(app, host="127.0.0.0", port=8000)
-
+  uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 

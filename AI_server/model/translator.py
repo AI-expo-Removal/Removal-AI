@@ -2,7 +2,7 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 
 def translate_to_korean(english_sentences):
-    model_dir = "/Users/kdw/Documents/Projects/AI EXPO/Removal-AI/AI_server/results"
+    model_dir = "../Removal-AI/AI_server/results"
     max_token_length = 128
 
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
@@ -20,3 +20,5 @@ def translate_to_korean(english_sentences):
     translated_sentences = tokenizer.batch_decode(korean_outputs, skip_special_tokens=True)
     
     return translated_sentences
+
+translate_to_korean("hi")
