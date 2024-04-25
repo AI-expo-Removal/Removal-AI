@@ -11,37 +11,52 @@ import os
 
 app = FastAPI()
 
-async def pro_tetrancess_text(url): # mp4 video url
+def pro_tetrancess_text(url): # mp4 video url
   getaudio.getaud(url)
   text, timeline = voice_recognition.recognition()
   lang = detect.detect_language(text)
   return lang, timeline
 
-async def remo(timeline):
+def remo(timeline):
   return r_b.removal(timeline)
 
-async def translate(text):
+def translate(text):
   return translator.translate_to_korean(text)
 
-async def addsub(tl, mp4url):
+def addsub(tl, mp4url):
   return addsubtitle.addsub(tl, mp4url)
 
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://3.36.127.22:3306/removal"
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+@router.post("/upload")
+async def upload(file: UploadFile, directory: str):
+    if directory not in directories:
+        raise HTTPException(status_code=400, detail="유효하지 않는 디렉토리에요")
 
-@app.get("/videos/{video_id}")
-async def get_video_url(video_id: int):
-    db = SessionLocal()
-    video = db.query(Video).filter(Video.id == video_id).first()
-    if video is None:
-        return {"error": "Video not found"}
-    return {"url": video.url}
+    filename = f"{str(uuid.uuid4())}.jpg"
+    s3_key = f"{directory}/{filename}"
 
-if __name__ == "__main__":
-  # 서버 실행
-  import uvicorn
-  uvicorn.run(app, host="127.0.0.1", port=8000)
+    try:
+        s3.upload_fileobj(file.file, BUCKET_NAME, s3_key)
+    except (BotoCoreError, ClientError) as e:
+        raise HTTPException(status_code=500, detail=f"S3 upload fails: {str(e)}")
+
+    url = "https://s3-ap-northeast-2.amazonaws.com/%s/%s" % (
+        BUCKET_NAME,
+        urllib.parse.quote(s3_key, safe="~()*!.'"),
+    )
+    return JSONResponse(content={"url": url})
+
+# @app.get("/videos/{video_id}")
+# async def get_video_url(video_id: int):
+#     db = SessionLocal()
+#     video = db.query(Video).filter(Video.id == video_id).first()
+#     if video is None:
+#         return {"error": "Video not found"}
+#     return {"url": video.url}
+
+# if __name__ == "__main__":
+#   # 서버 실행
+#   import uvicorn
+#   uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 
