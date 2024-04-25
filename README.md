@@ -7,4 +7,6 @@
 required modules
 - boto3
 - accelerate
+- protobuf
+- sentencepiece
 - etc in codes with import
