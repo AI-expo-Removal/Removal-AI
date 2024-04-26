@@ -67,4 +67,4 @@ def addsub(tl, url):
 
   final_video.write_videofile(output_video_file, codec='libx264', audio_codec='aac')
 
-  return output_video_file # 로컬에 저장된 영상 반환
+  return output_video_file # 로컬에 저장된 영상 경로 반환

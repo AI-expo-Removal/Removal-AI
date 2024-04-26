@@ -11,9 +11,9 @@ import os
 app = FastAPI()
 
 def save_result_to_file(result):
-  file_path = "./location.txt"
-  with open(file_path, "a") as file:
-    file.write(str(result) + "\n")
+  file_path = "../Removal-AI/AI/location.txt"
+  with open(file_path, "w") as file:
+    file.write(str(result))
 
 def pro_tetrancess_text(url): # mp4 video url
   getaudio.getaud(url)
@@ -58,7 +58,7 @@ async def give_video_url():
   if not Path(file_path).is_file():
     raise HTTPException(status_code=404, detail="File not found")
 
-  return FileResponse(file_path, media_type="video/mp4")
+  return FileResponse(file_path, media_type=f"./video/outvid/")
 
 if __name__ == "__main__":
   # 서버 실행
