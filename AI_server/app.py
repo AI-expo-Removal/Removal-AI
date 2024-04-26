@@ -9,7 +9,7 @@
 
 # app = FastAPI()
 
-# base_url = "http://3.36.127.22:8080"
+# base_url = "YOUR_BASE_URL"
 
 # backend_url = "http://your-backend-server-url"
 

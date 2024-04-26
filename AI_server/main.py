@@ -1,5 +1,6 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Path
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
+from pathlib import Path
 from typing import List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -53,12 +54,11 @@ async def upload_video(video: UploadFile = File(...)):
 
 @app.get("/download/") # 클라이언트 입장 get
 async def give_video_url():
-  file_path = open('./location.txt', 'r')
-  file_path = file_path.readline()
-  if not Path(file_path).is_file():
-    raise HTTPException(status_code=404, detail="File not found")
+  file_path = open('../Removal-AI/AI_server/location.txt', 'r').readline().strip()
+  if Path(file_path).is_file():
+    raise HTTPException(status_code=404, detail="Link not found")
 
-  return FileResponse(file_path, media_type=f"./video/outvid/")
+  return FileResponse(file_path, media_type=f"./video/outvid/me")
 
 if __name__ == "__main__":
   # 서버 실행
