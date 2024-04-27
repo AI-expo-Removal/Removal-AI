@@ -129,4 +129,4 @@ async def get_video():
 if __name__ == "__main__":
   # 서버 실행
   import uvicorn
-  uvicorn.run(app="main:app", host="192.168.1.20", port=5632, reload=True)
+  uvicorn.run(app="main:app", host="YOUR_IP", port=5632, reload=True) # 포트 변경 가능
