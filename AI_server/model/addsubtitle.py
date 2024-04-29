@@ -65,6 +65,6 @@ def addsub(tl, url):
 
   final_video = CompositeVideoClip([video] + subtitle_clips)
 
-  final_video.write_videofile(output_video_file, codec='libx264', audio_codec='aac')
+  final_video.write_videofile(output_video_file, codec='utf-8', audio_codec='aac')
 
   return output_video_file # 로컬에 저장된 영상 경로 반환

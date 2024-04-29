@@ -4,3 +4,5 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+Removal-AI/AI_server/result/
+Removal-AI/AI_server/.env
