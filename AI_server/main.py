@@ -1,15 +1,25 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import FileResponse
-from pathlib import Path
-from typing import List
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from fastapi import FastAPI, File, HTTPException
+from botocore.exceptions import NoCredentialsError
+from io import BytesIO
 from model import voice_recognition, translator, detect, addsubtitle, getaudio
 from remove_bad import r_b
-from models import Video
+import requests
+import boto3
 import os
 
 app = FastAPI()
+
+AWS_ACCESS_KEY_ID = "YOUR_ACCESS_KEY_ID"
+AWS_SECRET_ACCESS_KEY = "YOUR_SECRET_ACCESS_KEY"
+AWS_REGION_NAME = "YOUR_REGION_NAME"
+S3_BUCKET_NAME = "YOUR_BUCKET_NAME"
+
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION_NAME
+)
 
 def save_result_to_file(result):
   file_path = "../Removal-AI/AI/location.txt"
@@ -31,36 +41,48 @@ def translate(text):
 def addsub(tl, mp4url):
   return addsubtitle.addsub(tl, mp4url)
 
-@app.post("/upload/") # 클라이언트 입장 post
-async def upload_video(video: UploadFile = File(...)):
-  
-  output_folder = "../Removal-AI/AI_server/video/"
-  os.makedirs(output_folder, exist_ok=True)
-  contents = await video.read()
+@app.post("/upload")
+async def download_file(file_key: str):
+  try:
+    save_path = "video/"
+    response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=file_key)
+    file_content = response["Body"].read()
 
-  output_path = os.path.join(output_folder, video.filename)
-  with open(output_path, "wb") as f:
-    f.write(contents)
+    local_file_path = os.path.join(save_path, file_key.split("/")[-1])
+    with open(local_file_path, "wb") as f:
+      f.write(file_content)
+    video_url = local_file_path
 
-  video_url = output_folder + video.filename
+    lang, timeline = pro_tetrancess_text(video_url)
+    timeline = remo(timeline)
+    if lang == 'eng':
+      timeline = translate(timeline)
 
-  lang, timeline = pro_tetrancess_text(video_url)
-  timeline = remo(timeline)
-  if lang == 'eng':
-    timeline = translate(timeline)
+    save_result_to_file(addsub(timeline, video_url))
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+    
 
-  save_result_to_file(addsub(timeline, video_url))
-  return "SUCCESS"
+@app.get("/download")
+async def upload_video():
+    try:
+        file = "video/outvid/"
+        file_content = await file.read()
 
-@app.get("/download/") # 클라이언트 입장 get
-async def give_video_url():
-  file_path = open('../Removal-AI/AI_server/location.txt', 'r').readline().strip()
-  if Path(file_path).is_file():
-    raise HTTPException(status_code=404, detail="Link not found")
+        s3_client.upload_fileobj(
+            BytesIO(file_content),
+            S3_BUCKET_NAME,
+            file.filename
+        )
 
-  return FileResponse(file_path, media_type=f"./video/outvid/me")
+        file_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION_NAME}.amazonaws.com/{file.filename}"
+        return {"message": "s3 url이 정상적으로 반환되었습니다.", "file_url": file_url}
+
+    except NoCredentialsError:
+        raise HTTPException(status_code=500, detail="AWS credentials not available.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-  # 서버 실행
-  import uvicorn
-  uvicorn.run(app="main:app", host="127.0.0.1", port=8000, reload=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
