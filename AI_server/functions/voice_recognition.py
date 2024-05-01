@@ -3,11 +3,11 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from datasets import load_dataset
 import os
 
-def recognition():
+def recognition(lage):
   audiourl = "../AI_server/video/output/sond.mp3"
 
   # device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu") # in mac silicon chip gpu
-  device = "cuda" if torch.cuda.is_available() else "cpu" # in nvidia gpu
+  device = "cuda" if torch.cuda.is_available() else torch.device("cpu") # in nvidia gpu
   print(f'"{device}로 인공지능 처리를 시작합니다."')
   torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
@@ -32,5 +32,5 @@ def recognition():
     device=device,
   )
 
-  result = pipe(audiourl, generate_kwargs={"language": "korean"})
+  result = pipe(audiourl, generate_kwargs={"language": lage})
   return result['chunks']
