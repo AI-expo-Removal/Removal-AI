@@ -3,14 +3,8 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 from datasets import load_dataset
 import os
 
-def seconds_to_hhmmss(seconds):
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
-    return "{:02d}:{:02d}:{:02d}".format(int(hours), int(minutes), int(seconds))
-
 def recognition():
-  audiourl = "../Removal-AI/AI_server/video/output/sund.mp3"
+  audiourl = "../AI_server/video/output/sond.mp3"
 
   # device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu") # in mac silicon chip gpu
   device = "cuda" if torch.cuda.is_available() else "cpu" # in nvidia gpu
@@ -38,7 +32,5 @@ def recognition():
     device=device,
   )
 
-  result = pipe(audiourl, generate_kwargs={"language": "korean", "language": "english"})
-  return result["text"], result["chunks"]
-
-recognition()
+  result = pipe(audiourl, generate_kwargs={"language": "korean"})
+  return result['chunks']

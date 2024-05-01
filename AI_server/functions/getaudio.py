@@ -2,7 +2,7 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 
 def getaud(videourl):
   mp4_file = videourl
-  mp3_file = "../Removal-AI/AI_server/video/output/sund.mp3"
+  mp3_file = "./video/output/sond.mp3"
 
   video_clip = VideoFileClip(mp4_file)
 
