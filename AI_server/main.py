@@ -1,10 +1,12 @@
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from botocore.exceptions import NoCredentialsError, ClientError
 from io import BytesIO
 from functions import voice_recognition, translator, detect, addsubtitle, getaudio
 from remove_bad import r_b
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from urllib.parse import quote
 import requests
@@ -14,7 +16,7 @@ import requests
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(openapi_url='/openapi.json')
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,13 +40,33 @@ s3_client = boto3.client(
 
 s3 = boto3.client('s3')
 
-def upload_file_to_s3(file, bucket_name, acl="private"):
+class UploadRequest(BaseModel):
+  s3_url: str
+
+def upload_to_s3(file_name, bucket, object_name=None):
+    # S3 클라이언트 생성
+    s3_client = boto3.client('s3')
+    
+    # S3 객체 이름이 제공되지 않은 경우 파일 이름 사용
+    if object_name is None:
+        object_name = file_name.split("/")[-1]
+
+    # 파일 업로드 시도
+    try:
+        # 파일 업로드
+        s3_client.upload_file(file_name, bucket, object_name)
+        return f"https://{bucket}.s3.{AWS_REGION_NAME}.amazonaws.com/{object_name}"
+    except NoCredentialsError:
+        print("Credentials not available")
+    except Exception as e:
+        print(e)
+
+def upload_file_to_s3(file, bucket_name):
   try:
     s3_client.upload_fileobj(
       file.file,
       bucket_name,
-      file.filename,
-      ExtraArgs={"ACL": acl}
+      file.filename
     )
   except Exception:
     raise HTTPException(status_code=500, detail="Error uploading file to S3")
@@ -53,7 +75,7 @@ def upload_file_to_s3(file, bucket_name, acl="private"):
 def download_s3(s3_url, local_dir): # s3에서 동영상 다운로드
   file_name = s3_url.split('/')[-1]
   local_path = f"{local_dir}/{file_name}"
-    
+
   response = requests.get(s3_url)
     
   if response.status_code == 200:
@@ -116,45 +138,22 @@ def giveurl(video_path):
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/upload") # 그냥 자막 추가 API
-async def download_file(s3_url: str):
-  try:
-    save_video_path = "./video/uploadedvid"
-    video_path = download_s3(s3_url, save_video_path)
-    lage = "korean"
-    timeline = pro_tetrancess_text(video_path, lage)
-    file_path = addsub(timeline, video_path)
-
-    return giveurl(file_path)
-  except Exception:
-    raise HTTPException(status_code=500, detail = str(Exception))
-  # try:
-  #   save_path = "video/"
-  #   response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=file_key)
-  #   file_content = response["Body"].read()
-
-  #   local_file_path = os.path.join(save_path, file_key.split("/")[-1])
-  #   with open(local_file_path, "wb") as f:
-  #     f.write(file_content)
-  #   video_url = local_file_path
-
-  #   lang, timeline = pro_tetrancess_text(video_url)
-
-  #   save_result_to_file(addsub(timeline, video_url))
-  #   return giveurl()
-  # except Exception as e:
-  #   raise HTTPException(status_code=500, detail=str(e))
+@app.post("/gets3")
+async def upload_video(file: UploadFile = File(...)):
+  file_url = upload_file_to_s3(file, S3_BUCKET_NAME)
+  return {"url": file_url}
 
 @app.post("/removal") # 욕설 삭제 자막 API
 async def download_file(s3_url: str):
   try:
     save_video_path = "./video/uploadedvid"
     video_path = download_s3(s3_url, save_video_path)
-    _, timeline = pro_tetrancess_text(video_path)
-    timeline = timeline[1]
+    lage = "korean"
+    timeline = pro_tetrancess_text(video_path, lage)
     timeline = remo(timeline)
+    file_path = addsub(timeline, video_path)
 
-    return giveurl(addsub(timeline, video_path))
+    return giveurl(file_path)
   except Exception:
     raise HTTPException(status_code=500, detail = str(Exception))
   # try:
@@ -176,8 +175,49 @@ async def download_file(s3_url: str):
   # except Exception as e:
   #   raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/upload") # 그냥 자막 추가 API
+async def download_file(ul: UploadRequest):
+  try:
+    save_video_path = "./video/uploadedvid"
+    video_path = download_s3(ul.s3_url, save_video_path)
+    lage = "korean"
+    timeline = pro_tetrancess_text(video_path, lage)
+    file_path = addsub(timeline, video_path)
+    file_url = upload_to_s3(file_path, S3_BUCKET_NAME)
+
+    return file_url
+  except Exception:
+    raise HTTPException(status_code=500, detail = str(Exception))
+  # try:
+  #   save_path = "video/"
+  #   response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=file_key)
+  #   file_content = response["Body"].read()
+
+  #   local_file_path = os.path.join(save_path, file_key.split("/")[-1])
+  #   with open(local_file_path, "wb") as f:
+  #     f.write(file_content)
+  #   video_url = local_file_path
+
+  #   lang, timeline = pro_tetrancess_text(video_url)
+
+  #   save_result_to_file(addsub(timeline, video_url))
+  #   return giveurl()
+  # except Exception as e:
+  #   raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/translate") # 영어 to 한국어 번역 자막 API
 async def download_file(s3_url: str):
+  try:
+    save_video_path = "./video/uploadedvid"
+    video_path = download_s3(s3_url, save_video_path)
+    lage = "english"
+    timeline = pro_tetrancess_text(video_path, lage)
+    timeline = translate(timeline)
+    file_path = addsub(timeline, video_path)
+
+    return giveurl(file_path)
+  except Exception:
+    raise HTTPException(status_code=500, detail = str(Exception))
   # try:
   #   save_path = "video/"
   #   response = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=file_key)
@@ -196,26 +236,8 @@ async def download_file(s3_url: str):
   #   return giveurl()
   # except Exception as e:
   #   raise HTTPException(status_code=500, detail=str(e))
-  try:
-    save_video_path = "./video/uploadedvid"
-    video_path = download_s3(s3_url, save_video_path)
-    _, timeline = pro_tetrancess_text(video_path)
-    timeline = timeline[1]
-    timeline = remo(timeline)
-    timeline = translate(timeline)
-
-    return giveurl(addsub(timeline, video_path))
-  except Exception:
-    raise HTTPException(status_code=500, detail = str(Exception))
-  
-@app.post("/gets3")
-async def upload_video(file: UploadFile = File(...)):
-  file_url = upload_file_to_s3(file, S3_BUCKET_NAME)
-  return {"url": file_url}
 
 if __name__ == "__main__":
   # 서버 실행
   import uvicorn
-  uvicorn.run(app="main:app", host="172.16.23.66", port=5632, reload=True) # 포트 변경 가능
-
-# s3 url 받기 -> url로 동영상 다운로드 -> 동영상 경로를 반환 -> 경로를 이용하여 동영상은 남겨두고 mp3 파일 생성 -> whisper 모델 전달 -> (추출된 timeline 텍스트에서 욕설 삭제) -> (번역) -> srt 파일 작성 -> addsubtitle 실행 -> s3 업로드 -> url 반환
+  uvicorn.run(app="main:app", host="172.16.23.66", port=5732, reload=True) # 포트 변경 가능

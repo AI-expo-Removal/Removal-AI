@@ -1,7 +1,7 @@
 def removal(timeline):
     n = 0
     for i in timeline:
-        f = open('./AI_server/remove_bad/badlanguage.txt', 'r', encoding='UTF8')
+        f = open('./remove_bad/badlanguage.txt', 'r', encoding='UTF8')
         bad_list = f.read().split(', ')
         data = i['text'].split()
 
