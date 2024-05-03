@@ -242,4 +242,4 @@ async def download_file(s3_url: str):
 if __name__ == "__main__":
   # 서버 실행
   import uvicorn
-  uvicorn.run(app="main:app", host="172.16.23.66", port=5732, reload=True) # 포트 변경 가능
+  uvicorn.run(app="main:app", host="SERVER_ADDRESS", port=5732, reload=True) # 포트 변경 가능
