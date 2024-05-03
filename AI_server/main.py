@@ -152,8 +152,9 @@ async def download_file(s3_url: str):
     timeline = pro_tetrancess_text(video_path, lage)
     timeline = remo(timeline)
     file_path = addsub(timeline, video_path)
+    file_url = upload_to_s3(file_path, S3_BUCKET_NAME)
 
-    return giveurl(file_path)
+    return file_url
   except Exception:
     raise HTTPException(status_code=500, detail = str(Exception))
   # try:
@@ -214,8 +215,9 @@ async def download_file(s3_url: str):
     timeline = pro_tetrancess_text(video_path, lage)
     timeline = translate(timeline)
     file_path = addsub(timeline, video_path)
+    file_url = upload_to_s3(file_path, S3_BUCKET_NAME)
 
-    return giveurl(file_path)
+    return file_url
   except Exception:
     raise HTTPException(status_code=500, detail = str(Exception))
   # try:
