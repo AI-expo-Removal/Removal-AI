@@ -134,7 +134,7 @@ async def get_video(video_name: str):
 
 if __name__ == "__main__": # 서버 실행
   import uvicorn
-  uvicorn.run(app="main:app", host="192.168.2.40", port=5632, reload=True)
+  uvicorn.run(app="main:app", host="YOUR_IP", port=5632, reload=True)
 
 
 
