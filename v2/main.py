@@ -134,7 +134,7 @@ async def download_file(video_file: UploadFile = File(...)):
 
 if __name__ == "__main__": # 서버 실행
   import uvicorn
-  uvicorn.run(app="main:app", host="192.168.1.56", port=5632, reload=True)
+  uvicorn.run(app="main:app", host="YOUR_IP", port=5632, reload=True)
 
 
 # 저장된 영상 가져와서 오디오 데이터 따로 저장
