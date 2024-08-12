@@ -137,7 +137,6 @@ if __name__ == "__main__": # 서버 실행
   uvicorn.run(app="main:app", host="192.168.1.56", port=5632, reload=True)
 
 
-
 # 저장된 영상 가져와서 오디오 데이터 따로 저장
 # 한글을 전달
 # whisper 사용해서 대화 텍스트 뽑기
