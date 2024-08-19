@@ -2,8 +2,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from model import getaudio, voice_recognition, writesrt, addsubtitle, translate
+from keys.keys import YOUR_IP, S3_BUCKET_ACCESS_KEY, S3_BUCKET_PRIVATE_KEY, S3_BUCKET_NAME, S3_BUCKET_REGION
 import os
 import shutil
+import boto3
 
 app = FastAPI()
 
@@ -13,6 +15,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+s3 = boto3.client(
+  "s3", aws_access_key_id=S3_BUCKET_ACCESS_KEY, aws_secret_access_key=S3_BUCKET_PRIVATE_KEY
 )
 
 def get_script(video_title, video_path, language):
@@ -49,12 +55,15 @@ async def basic(video_path: str): # 동영상 -> srt파일 대본 -> 영상에 �
     # 저장된 동영상에 자막 추가
     addsubtitle.addsub(video_title, video_path)
 
-    processed_path = "./v2/processed/" + video_title + ".mp4"
+    processed_path = "./v2/processed/" + video_title + "_subtitled.mp4" # 처리된 영상의 경로
+    processed_name = video_title + "_subtitled.mp4" # 처리된 영상 파일명
 
-    if os.path.exists(processed_path):
-      return FileResponse(str(video_path))
-    else:
+    if not os.path.exists(processed_path):
       raise HTTPException(status_code=404, detail="video file not found.")
+    try:
+      s3.upload_file(processed_path, S3_BUCKET_NAME, processed_name)
+    except Exception as e:
+      raise HTTPException(status_code=500, detail=f"S3 upload failes, Exception: {e}")
   except Exception as e:
     print(str(e))
     raise HTTPException(status_code=500, detail=str(e))
@@ -98,7 +107,7 @@ async def basic(video_path: str): # 동영상 -> srt파일 대본 -> 욕설 제�
 async def download_file(video_file: UploadFile = File(...)):
   try:
     # 영상을 저장할 경로 설정
-    video_folder = "./v2/video"
+    video_folder = "./v2/video/"
     if not os.path.exists(video_folder):
       os.mkdir(video_folder)
     
@@ -107,7 +116,7 @@ async def download_file(video_file: UploadFile = File(...)):
     # 전달 받은 동영상 저장
     with open(file_path, "wb") as b:
       shutil.copyfileobj(video_file.file, b)
-    
+
     print("-------title-------")
     print(f"{video_file.filename}")
     print("-------file_path-------")
@@ -134,7 +143,7 @@ async def download_file(video_file: UploadFile = File(...)):
 
 if __name__ == "__main__": # 서버 실행
   import uvicorn
-  uvicorn.run(app="main:app", host="YOUR_IP", port=5632, reload=True)
+  uvicorn.run(app="main:app", host=YOUR_IP, port=5632, reload=True)
 
 
 # 저장된 영상 가져와서 오디오 데이터 따로 저장

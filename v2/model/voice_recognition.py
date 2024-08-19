@@ -22,7 +22,8 @@ def recognition(title, language):
   try:
     audiourl = "./v2/audio/" + title + ".mp3"
 
-    device = "cuda" if torch.cuda.is_available() else "cpu" # in nvidia gpu
+    # device = "cuda" if torch.cuda.is_available() else "cpu" # in nvidia gpu
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
     print(f'"{device}로 인공지능 처리를 시작합니다."')
     torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
