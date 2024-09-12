@@ -26,9 +26,12 @@ def get_script(video_title, video_path, language):
     # 동영상을 입력받아, 오디오를 추출한 후, 대본을 만들어 srt 파일로 저장
     if not os.path.exists("./v2/audio"):
       os.mkdir("./v2/audio")
+
     getaudio.getaud(video_title, video_path)
     # recognition_wav2vec2.recognition(video_title, language)
     text, text_with_timestamp = voice_recognition.recognition(video_title, language)
+    if text_with_timestamp == "Video Time Error":
+      raise HTTPException(status_code=400, detail={"Error": "video time got something wrong."})
 
     # 동영상 언어가 영어일 경우 script를 한글로 번역
     if language == 'englsih':
@@ -41,14 +44,15 @@ def get_script(video_title, video_path, language):
     print("srt 파일 생성 완료.")
     return "srt processing Success!!"
   except Exception as e:
-    print(f"Error: {str(e)}")
-    return "Error occurred"
+    raise HTTPException(status_code=500, detail={"Error": 'error occurred at the "get_script"', 'detail': str(e)})
 
 @app.get("/basic-subtitle") # 업로드 받은 동영상에 자막을 추가 후 다운로드 요청을 기다림.
 async def basic(video_path: str): # 동영상 -> srt파일 대본 -> 영상에 자막으로 삽입
   try:
     language = "korean"
     video_title = os.path.splitext(os.path.basename(video_path))[0]
+    if video_title == "Tea Pot":
+      raise HTTPException(status_code=418, detail={"Error": "I'm a teapot"})
     # 파일 형식 없는 이름 / video.title은 파일 형식 있는 이름
     get_script(video_title, video_path, language) # 자막 추가 함수
 
@@ -56,12 +60,13 @@ async def basic(video_path: str): # 동영상 -> srt파일 대본 -> 영상에 �
     addsubtitle.addsub(video_title, video_path)
 
     processed_path = "./v2/processed/" + video_title + "_subtitled.mp4" # 처리된 영상의 경로
-    processed_name = video_title + "_subtitled.mp4" # 처리된 영상 파일명
-
+    processed_name = "removal/" + video_title + "_subtitled.mp4" # 처리된 영상 파일명
+    
     if not os.path.exists(processed_path):
       raise HTTPException(status_code=404, detail="video file not found.")
     try:
       s3.upload_file(processed_path, S3_BUCKET_NAME, processed_name)
+      return HTTPException(status_code=200, detail={"s3_url": f"https://s3.{S3_BUCKET_REGION}.amazonaws.com/{S3_BUCKET_NAME}/{processed_name}"})
     except Exception as e:
       raise HTTPException(status_code=500, detail=f"S3 upload failes, Exception: {e}")
   except Exception as e:
@@ -111,7 +116,7 @@ async def download_file(video_file: UploadFile = File(...)):
     if not os.path.exists(video_folder):
       os.mkdir(video_folder)
     
-    file_path = os.path.join(video_folder + '/' + video_file.filename)
+    file_path = os.path.join(video_folder + video_file.filename)
 
     # 전달 받은 동영상 저장
     with open(file_path, "wb") as b:

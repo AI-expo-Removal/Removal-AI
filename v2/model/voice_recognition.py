@@ -22,8 +22,8 @@ def recognition(title, language):
   try:
     audiourl = "./v2/audio/" + title + ".mp3"
 
-    # device = "cuda" if torch.cuda.is_available() else "cpu" # in nvidia gpu
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu" # in windows and intel apple chip
+    # device = "mps" if torch.backends.mps.is_available() else "cpu" # in apple silicon chip
     print(f'"{device}로 인공지능 처리를 시작합니다."')
     torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
@@ -49,8 +49,10 @@ def recognition(title, language):
     )
 
     result = pipe(audiourl, generate_kwargs={"language": language})
+
     print(result)
+
     return result["text"], result["chunks"]
   except Exception as e:
     print(f"ERROR: {str(e)}")
-    return ""
+    return "Error", "Video Time Error"

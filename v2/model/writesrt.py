@@ -10,10 +10,15 @@ def format_srt_time(seconds):
 def create_srt_from_list(subtitles):
   srt_file = "./v2/srt_script/temp.srt"
 
-  if os.path.exists(srt_file):
-    print(f"Warning: File '{srt_file}' already exists and will be overwritten.")
+  with open(srt_file, 'w') as f:
+    pass
+
+  print("-----------1")
+  # if os.path.exists(srt_file):
+  #   print(f"Warning: File '{srt_file}' already exists and will be overwritten.")
 
   with open(srt_file, 'w', encoding='utf-8') as f:
+    print("-----------2")
     for idx, subtitle in enumerate(subtitles, start=1):
       start_time = subtitle['timestamp'][0]
       end_time = subtitle['timestamp'][1]
@@ -23,7 +28,6 @@ def create_srt_from_list(subtitles):
       start_srt = format_srt_time(start_time)
       end_srt = format_srt_time(end_time)
 
-      # Write subtitle index
       f.write(f"{idx}\n")
 
       # Write time format --> (e.g., 00:00:00,000 --> 00:00:02,000)
